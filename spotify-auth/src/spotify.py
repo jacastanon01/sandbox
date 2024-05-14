@@ -41,7 +41,7 @@ def auth_header(token: str) -> dict[str, str]:
     return {"Authorization": "Bearer " + token}
 
 
-def get_track_data(token: str, uri: str) -> Response | None:
+def get_track_data(token: str, uri: str) -> Dict | None:
     url = f"https://api.spotify.com/v1/tracks/{uri}"
     headers = auth_header(token)
     response = requests.get(url, headers=headers)
