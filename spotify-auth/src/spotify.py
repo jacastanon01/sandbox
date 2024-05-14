@@ -41,7 +41,7 @@ def auth_header(token: str) -> dict[str, str]:
     return {"Authorization": "Bearer " + token}
 
 
-def get_track_data(token: str, uri: str) -> Dict | None:
+def get_track_data(token: str, uri: str) -> Response | None:
     url = f"https://api.spotify.com/v1/tracks/{uri}"
     headers = auth_header(token)
     response = requests.get(url, headers=headers)
@@ -73,6 +73,6 @@ def get_track(
         token = session.get("access_token")
     data = get_track_data(token, uri)
     if data:
-        return requests.jsonify({"data": data}), 200
+        return jsonify({"data": data}), 200
     else:
         return jsonify({"error": "Track not found."}), 404
