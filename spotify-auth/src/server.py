@@ -10,6 +10,7 @@ from src.auth_token import (
     is_token_expired,
 )
 from src.spotify import (
+    get_recently_played,
     get_track_data,
 )
 
@@ -31,11 +32,11 @@ def callback() -> Response:
     code = request.args.get("code")
     if code:
         gen_token = generate_token(code)
-        token = gen_token.get("access_token")
-    else:
-        token = session.get("access_token")
-    uri = "2TpxZ7JUBn3uw46aR7qd6V"
-    data = get_track_data(uri)
+        print(gen_token)
+
+    # uri = "2TpxZ7JUBn3uw46aR7qd6V"
+    # data = get_track_data(uri)
+    data = get_recently_played()
 
     if data:
         return jsonify({"data": data}), 200
