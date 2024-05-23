@@ -1,8 +1,8 @@
 from base64 import b64encode
 import time
-from flask import Response, jsonify, session
+from flask import session
 import requests
-from typing import Literal, TypedDict, Dict
+from typing import TypedDict
 
 from src.config import SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET
 
@@ -12,8 +12,34 @@ class ResponseToken(TypedDict):
     expires_in: int
 
 
-def generate_token() -> ResponseToken:
-    """Gets a token from the Spotify API"""
+def generate_token_from_auth_code() -> ResponseToken:
+    try:
+        url = "https://accounts.spotify.com/authorize"
+        scope = (
+            "user-read-recently-played playlist-modify-public playlist-modify-private"
+        )
+        params = {
+            "client_id": SPOTIFY_CLIENT_ID,
+            "response_type": "code",
+            "redirect_uri": "http://localhost/callback",
+            "scope": scope,
+        }
+
+        response = requests.get(url, params=params)
+        print(response.json())
+    except Exception as e:
+        print(f"Unable to generate new token/n{e}")
+
+
+def generate_token_from_credentials() -> ResponseToken:
+    """uses the client id and secret to get a token from the Spotify API
+
+    Raises:
+        Exception: unable to get token
+
+    Returns:
+        ResponseToken
+    """
     try:
         url = "https://accounts.spotify.com/api/token"
         client_secret = SPOTIFY_CLIENT_SECRET
@@ -54,25 +80,5 @@ def is_token_expired() -> bool:
     return time.time() > expires_at
 
 
-def get_track_data(token: str, uri: str) -> Dict | None:
-    url = f"https://api.spotify.com/v1/tracks/{uri}"
-    headers = auth_header(token)
-    response = requests.get(url, headers=headers)
-    if response.ok:
-        return response.json()
-    return None
-
-
-def get_track(
-    uri: str,
-) -> tuple[Response, Literal[404]] | tuple[Response, Literal[200]]:
-    if session.get("access_token") is None or is_token_expired():
-        gen_token = generate_token()
-        token = gen_token.get("access_token")
-    else:
-        token = session.get("access_token")
-    data = get_track_data(token, uri)
-    if data:
-        return jsonify({"data": data}), 200
-    else:
-        return jsonify({"error": "Track not found."}), 404
+if __name__ == "__main__":
+    generate_token_from_auth_code()
