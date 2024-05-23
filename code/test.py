@@ -20,8 +20,8 @@ list2 = {"D": 4, "E": 5, "F": 6}
 l = [1, 2, 3]
 s = [2, 3, 4]
 
-
-print({**l, **s})
+print({**list1, **list2})
+print([*l, *s])
 
 # print(items(a=1, b=2, c=3))
 # print(dict(y.items()), {"D": 4})
@@ -38,6 +38,9 @@ def is_prime(n):
     return True
 
 
-print(is_prime(9))
-print(is_prime(-4))
-print(is_prime(8))
+# print(is_prime(9))
+# print(is_prime(-4))
+# print(is_prime(8))
+
+username = "jac"
+print(f"{username :*^10}")
