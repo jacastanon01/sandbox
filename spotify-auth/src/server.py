@@ -3,6 +3,7 @@ from flask import jsonify, request, session, Flask, Response
 import os
 
 from src.auth_token import (
+    auth_wrapper,
     request_access_token,
     save_token_to_session,
     generate_token,
@@ -24,6 +25,7 @@ def index() -> tuple[Response, Literal[404]] | tuple[Response, Literal[200]]:
 
 
 @app.route("/callback")  # ?code=<string:code>&state=<string:state>
+@auth_wrapper
 def callback() -> Response:
     print("Redirected to callback")
     code = request.args.get("code")
@@ -33,7 +35,8 @@ def callback() -> Response:
     else:
         token = session.get("access_token")
     uri = "2TpxZ7JUBn3uw46aR7qd6V"
-    data = get_track_data(token, uri)
+    data = get_track_data(uri)
+
     if data:
         return jsonify({"data": data}), 200
     else:

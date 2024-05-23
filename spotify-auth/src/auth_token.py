@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 from flask import redirect, session
 import requests
 from typing import TypedDict, Optional
+from functools import wraps
 
 
 from src.config import SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET
@@ -83,3 +84,16 @@ def is_token_expired() -> bool:
         return True
     expires_at = session["expires_in"]
     return time.time() > expires_at
+
+
+def auth_wrapper(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not is_token_expired():
+            print("Current token is still valid")
+        else:
+            token = generate_token()
+            save_token_to_session(token)
+        return func(*args, **kwargs)
+
+    return wrapper
