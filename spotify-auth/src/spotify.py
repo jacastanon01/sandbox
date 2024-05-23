@@ -1,57 +1,8 @@
-from base64 import b64encode
-import time
 from flask import Response, jsonify, session
 import requests
-from typing import Literal, TypedDict, Dict
+from typing import Literal, Dict
 
-from src.config import SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET
-
-
-class ResponseToken(TypedDict):
-    access_token: str
-    expires_in: int
-
-
-def generate_token() -> ResponseToken:
-    """Gets a token from the Spotify API"""
-    try:
-        url = "https://accounts.spotify.com/api/token"
-        client_secret = SPOTIFY_CLIENT_SECRET
-        client_id = SPOTIFY_CLIENT_ID
-
-        auth_bytes = f"{client_id}:{client_secret}".encode()
-        auth_header = b64encode(auth_bytes).decode()
-        headers = {
-            "Authorization": f"Basic {auth_header}",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-        data = {"grant_type": "client_credentials"}
-
-        response = requests.post(url, headers=headers, data=data)
-        token = response.json()
-
-        save_token_to_session(token)
-        return token
-
-    except Exception as e:
-        raise Exception("Unable to generate new token", str(e))
-
-
-def auth_header(token: str) -> dict[str, str]:
-    return {"Authorization": "Bearer " + token}
-
-
-def save_token_to_session(token) -> None:
-    session["access_token"] = token.get("access_token")
-    session["expires_in"] = int(time.time()) + token.get("expires_in")
-
-
-def is_token_expired() -> bool:
-    print(f"From is_token_expired {session.get('access_token')}")
-    if session.get("access_token") is None:
-        return True
-    expires_at = session["expires_in"]
-    return time.time() > expires_at
+from src.auth_token import generate_token, is_token_expired, auth_header
 
 
 def get_track_data(token: str, uri: str) -> Dict | None:

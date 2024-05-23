@@ -1,10 +1,14 @@
 from base64 import b64encode
 import time
-from flask import session
+from urllib.parse import urlencode
+from flask import redirect, session
 import requests
-from typing import TypedDict
+from typing import TypedDict, Optional
+
 
 from src.config import SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET
+
+REDIRECT = "http://127.0.0.1:8000/callback"
 
 
 class ResponseToken(TypedDict):
@@ -12,7 +16,7 @@ class ResponseToken(TypedDict):
     expires_in: int
 
 
-def generate_token_from_auth_code() -> ResponseToken:
+def request_access_token():
     try:
         url = "https://accounts.spotify.com/authorize"
         scope = (
@@ -21,25 +25,19 @@ def generate_token_from_auth_code() -> ResponseToken:
         params = {
             "client_id": SPOTIFY_CLIENT_ID,
             "response_type": "code",
-            "redirect_uri": "http://localhost/callback",
+            "redirect_uri": REDIRECT,
             "scope": scope,
         }
 
-        response = requests.get(url, params=params)
-        print(response.json())
+        auth_url = f"{url}?{urlencode(params)}"
+        return redirect(auth_url)
+
     except Exception as e:
-        print(f"Unable to generate new token/n{e}")
+        print(f"Unable to generate new token\n{e}")
 
 
-def generate_token_from_credentials() -> ResponseToken:
-    """uses the client id and secret to get a token from the Spotify API
-
-    Raises:
-        Exception: unable to get token
-
-    Returns:
-        ResponseToken
-    """
+def generate_token(code: Optional[str] = None) -> ResponseToken:
+    """Gets a token from the Spotify API"""
     try:
         url = "https://accounts.spotify.com/api/token"
         client_secret = SPOTIFY_CLIENT_SECRET
@@ -51,7 +49,14 @@ def generate_token_from_credentials() -> ResponseToken:
             "Authorization": f"Basic {auth_header}",
             "Content-Type": "application/x-www-form-urlencoded",
         }
-        data = {"grant_type": "client_credentials"}
+        if code:
+            data = {
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": REDIRECT,
+            }
+        else:
+            data = {"grant_type": "client_credentials"}
 
         response = requests.post(url, headers=headers, data=data)
         token = response.json()
@@ -78,7 +83,3 @@ def is_token_expired() -> bool:
         return True
     expires_at = session["expires_in"]
     return time.time() > expires_at
-
-
-if __name__ == "__main__":
-    generate_token_from_auth_code()

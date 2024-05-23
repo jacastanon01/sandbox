@@ -1,12 +1,15 @@
 from typing import Literal
-from flask import jsonify, session, Flask, Response
+from flask import jsonify, request, session, Flask, Response
 import os
 
-from src.spotify import (
-    generate_token,
-    get_track_data,
-    is_token_expired,
+from src.auth_token import (
+    request_access_token,
     save_token_to_session,
+    generate_token,
+    is_token_expired,
+)
+from src.spotify import (
+    get_track_data,
 )
 
 app = Flask(__name__)
@@ -16,7 +19,16 @@ app.secret_key = os.urandom(24)
 @app.route("/")
 def index() -> tuple[Response, Literal[404]] | tuple[Response, Literal[200]]:
     if session.get("access_token") is None or is_token_expired():
-        gen_token = generate_token()
+        return request_access_token()
+    return jsonify({"error": "Token exists and is valid"}), 200
+
+
+@app.route("/callback")  # ?code=<string:code>&state=<string:state>
+def callback() -> Response:
+    print("Redirected to callback")
+    code = request.args.get("code")
+    if code:
+        gen_token = generate_token(code)
         token = gen_token.get("access_token")
     else:
         token = session.get("access_token")
@@ -36,6 +48,11 @@ def get_token() -> tuple[Response, Literal[404]] | tuple[Response, Literal[200]]
     except Exception as e:
         return jsonify({"error": str(e)}), 404
     return jsonify({"access_token": session.get("access_token", "")}), 200
+
+
+@app.route("/favicon.ico")
+def favicon():
+    return Response(status=204)  # No Content
 
 
 if __name__ == "__main__":
